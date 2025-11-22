@@ -3,13 +3,16 @@ import domconnect from "./indexdomconnect"
 domconnect.initialize()
 
 ############################################################
+import { appLoaded } from "navhandler"
+
+############################################################
 global.allModules = Modules
 import * as cfg from "./configmodule.js"
 
 ############################################################
 appStartup = ->
-    ## which modules shall be kickstarted?
-    # Modules.appcoremodule.startUp()
+    appLoaded()
+    Modules.wsmodule.startHeartbeat()
     return
 
 ############################################################

@@ -5,7 +5,23 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-export initialize = ->
+import * as nav from "navhandler"
+import * as triggers from "./navtriggers.js"
+import * as uiState from "./uistatemodule.js"
+
+############################################################
+defaultBaseState = "chat"
+
+############################################################
+appBaseState = defaultBaseState
+uiAppMod = "none"
+appContext = {}
+
+############################################################
+currentVersion = document.getElementById("current-version")
+
+############################################################
+export initialize = (c) ->
     log "initialize"
-    #Implement or Remove :-)
+    if c and c.appVersion then currentVersion.textContent = c.appVersion
     return

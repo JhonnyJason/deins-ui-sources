@@ -1,0 +1,99 @@
+//- chatframe structure
+.chat
+    #chatframe
+        display block 
+
+.response
+    #input-outer
+        top auto
+        bottom 20px
+    #response-section
+        display block
+
+    #no-response-section
+        display none
+
+#chatframe
+    display none
+    height 100%
+    position relative
+    padding 20px
+    box-sizing: border-box
+    h1
+        font-size 21pt
+    p 
+        font-size 12pt
+        line-height: 125%
+
+#response-section
+    display none
+    max-width 1024px
+    padding 10px
+    padding-bottom 200px
+    // justify-self: center
+    margin auto
+    height 100%
+    box-sizing: border-box
+    overflow-y auto
+    scrollbar-width: thin
+    scrollbar-color: #fff #000;
+
+#user-message
+    background-color alpha(#fff, 0.1)
+    width fit-content
+    padding 20px
+    margin 20px
+    margin-left auto
+
+#no-response-section
+    position absolute
+    bottom calc(60% + 30px)
+    width 100%
+
+#input-outer
+    position absolute
+    z-index 2
+    top 40%
+    left 50%
+    transform: translateX(-50%)
+    margin auto
+    padding 15px
+    padding-right 60px
+    border solid 2px #fff
+    border-radius 25px
+    box-sizing: border-box
+    width: 100%
+    max-width 700px
+    background-color alpha(#000, 0.85)
+
+#user-input
+    min-height 24px
+    height 100%
+    max-height 150px
+    overflow-y auto
+    scrollbar-width: thin
+    scrollbar-color: #fff #000;
+#user-input.initial
+        opacity: 0.6
+
+#send-button
+    position: absolute
+    width 30px
+    height 30px
+    right 4px
+    bottom 4px
+    color #000
+    background-color #fff
+    border-radius: 50%
+    padding 8px
+    padding-left 11px
+    box-shadow: 0 0 5px #fff 
+
+
+@media desktopscreen
+    #chatframe
+        h1
+            font-size 26pt
+        p
+            font-size: 14pt
+

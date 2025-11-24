@@ -5,12 +5,23 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
+import * as chat from "./chatsessionmodule.js"
 import { sendMessage } from "./wsmodule.js"
 
 ############################################################
 # placeholderContent = "Bitte gib mir Auskunft zu ..."
 placeholderContent = null
 primeInputParagraph = null
+responseBuffer = null
+
+############################################################
+noSession = true
+chatHistory = null
+
+############################################################
+sToClass = []
+sToClass[chat.FROMUSER] = "user-message"
+sToClass[chat.FROMASSBOTO] = "assboto-message"
 
 ############################################################
 export initialize = ->
@@ -29,11 +40,14 @@ sendClicked = (evnt) ->
     log content
     if content == "" or content == placeholderContent then return
 
-    sendMessage(content)
+    chat.addUserMessage(content)
     return
 
 ############################################################
 checkStateOnType = (evnt) ->
+    if noSession then chat.startAuthorizedSession()
+    noSession = false
+
     content = userInput.textContent.trim()
     if !(content == placeholderContent) or evnt.key == "Enter" then userInput.className = ""
     return
@@ -49,4 +63,41 @@ resetInputState = ->
     userInput.appendChild(primeInputParagraph)
     primeInputParagraph.textContent = placeholderContent
     userInput.className = "initial"
+    return
+
+############################################################
+export addToResponseBuffer = (frag) ->
+    log "addToResponseBuffer"
+    # return unless typeof responseBuffer == "string"
+    responseBuffer += frag
+    return
+
+############################################################
+export setChatHistory = (messages) ->
+    log "setChatHistory"
+    chatHistory = messages
+    html = ""
+    
+    if Array.isArray(chatHistory)
+        for msgObj in messages
+            html += '<div class="'
+            html += sToClass[msgObj.s]
+            html += '"><p>'+msgObj.m+'</p></div>'
+
+    responseHistory.innerHTML = html
+    return
+
+
+############################################################
+export setProcessingResponseState = ->
+    log "setProcessingResponseState"
+    responseBuffer = ""
+    chatframe.classList = "response"
+    return
+
+export setDefaultState = ->
+    log "setDefaultState"
+    responseBuffer = null
+    if chatHistory? then chatframe.classList = "response"
+    else chatframe.classList = "no-response"
     return

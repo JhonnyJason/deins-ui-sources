@@ -1,5 +1,6 @@
 import * as appcoremodule from "./appcoremodule.js"
 import * as chatframemodule from "./chatframemodule.js"
+import * as chatsessionmodule from "./chatsessionmodule.js"
 import * as configmodule from "./configmodule.js"
 import * as contentmodule from "./contentmodule.js"
 import * as debugmodule from "./debugmodule.js"
@@ -10,6 +11,7 @@ import * as wsmodule from "./wsmodule.js"
 Modules = {
     appcoremodule,
     chatframemodule,
+    chatsessionmodule,
     configmodule,
     contentmodule,
     debugmodule,

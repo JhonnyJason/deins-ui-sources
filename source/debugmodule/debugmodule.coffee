@@ -3,11 +3,12 @@ import { addModulesToDebug } from "thingy-debug"
 ############################################################
 export modulesToDebug = {
 
-    appcoremodule: true
+    # appcoremodule: true
     wsmodule: true
     chatframemodule: true
-    navtriggers: true
-    uistatemodule: true
+    chatsessionmodule: true
+    # navtriggers: true
+    # uistatemodule: true
 }
 
 addModulesToDebug(modulesToDebug)

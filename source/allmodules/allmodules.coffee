@@ -5,6 +5,7 @@ import * as configmodule from "./configmodule.js"
 import * as contentmodule from "./contentmodule.js"
 import * as debugmodule from "./debugmodule.js"
 import * as headermodule from "./headermodule.js"
+import * as statemodule from "./statemodule.js"
 import * as uistatemodule from "./uistatemodule.js"
 import * as wsmodule from "./wsmodule.js"
 
@@ -16,6 +17,7 @@ Modules = {
     contentmodule,
     debugmodule,
     headermodule,
+    statemodule,
     uistatemodule,
     wsmodule,
 }

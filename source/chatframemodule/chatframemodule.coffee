@@ -12,7 +12,12 @@ import { sendMessage } from "./wsmodule.js"
 # placeholderContent = "Bitte gib mir Auskunft zu ..."
 placeholderContent = null
 primeInputParagraph = null
+
+############################################################
 responseBuffer = null
+bufferFlushing = false
+isStreaming = false
+bufferTextNode = null
 
 ############################################################
 noSession = true
@@ -65,19 +70,64 @@ resetInputState = ->
     userInput.className = "initial"
     return
 
+clearInputState = ->
+    userInput.innerHTML = ""
+    # userInput.appendChild(primeInputParagraph)
+    # primeInputParagraph.textContent = placeholderContent
+    # userInput.className = "initial"
+    return
+
+############################################################
+historyScrollBottom = -> responseHistory.scrollIntoView({behavior: "instant", block: "end"})
+
+############################################################
+stopStreaming = ->
+    isStreaming = false
+    bufferFlushing = false
+    responseBuffer = ""
+    if bufferTextNode? then bufferTextNode.data = ""
+    return
+
+startStreaming = ->
+    ## Remove responseWaitFrame  - add liveResponse frame
+    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
+    responseHistory.appendChild(liveResponse) unless liveResponse.isConnected
+
+    ## crate fresh bufferTextNode
+    if bufferTextNode? then bufferTextNode.data += responseBuffer
+    else 
+        bufferTextNode = document.createTextNode(responseBuffer)
+        liveResponse.appendChild(bufferTextNode)
+    responseBuffer = ""
+
+    isStreaming = true
+    return
+
+############################################################
+flushNext = ->
+    if responseBuffer
+        bufferTextNode.data += responseBuffer
+        responseBuffer = ""
+        historyScrollBottom()
+    bufferFlushing = false
+    return
+ 
 ############################################################
 export addToResponseBuffer = (frag) ->
     log "addToResponseBuffer"
     # return unless typeof responseBuffer == "string"
     responseBuffer += frag
+    startStreaming() unless isStreaming
+    requestAnimationFrame(flushNext) unless bufferFlushing
     return
 
 ############################################################
 export setChatHistory = (messages) ->
     log "setChatHistory"
     chatHistory = messages
+    stopStreaming()
+
     html = ""
-    
     if Array.isArray(chatHistory)
         for msgObj in messages
             html += '<div class="'
@@ -85,19 +135,32 @@ export setChatHistory = (messages) ->
             html += '"><p>'+msgObj.m+'</p></div>'
 
     responseHistory.innerHTML = html
+    requestAnimationFrame(historyScrollBottom)
     return
-
 
 ############################################################
 export setProcessingResponseState = ->
     log "setProcessingResponseState"
-    responseBuffer = ""
+    stopStreaming()
+
     chatframe.classList = "response"
+    clearInputState()
+    inputOuter.className = "frozen"
+
+    ## remove liveResponse and add responseWaitFrame
+    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
+    responseHistory.appendChild(responseWaitFrame) unless responseWaitFrame.isConnected
     return
 
 export setDefaultState = ->
     log "setDefaultState"
-    responseBuffer = null
+    stopStreaming()
+
     if chatHistory? then chatframe.classList = "response"
     else chatframe.classList = "no-response"
+    inputOuter.className = ""
+
+    ## Remove liveResponse and responseWaitFrame    
+    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
+    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
     return

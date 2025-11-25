@@ -14,6 +14,10 @@ chatStorage = null
 newResponse = ""
 
 ############################################################
+intfStartTime = null
+intfStreamStartTime = null
+
+############################################################
 export FROMUSER = 0
 export FROMASSBOTO = 1
 
@@ -37,6 +41,22 @@ export initialize = ->
 ############################################################
 saveStorage = -> S.save("chatStorage", chatStorage)
 
+setStartTime = ->
+    log "setStartTime"
+    intfStartTime = Date.now()
+    intfStreamStartTime = null
+    return
+
+stopAndReportTimings = ->
+    log "stopAndReportTimings"
+    end = Date.now()
+    log "Whole Response took: "+(end - intfStartTime)+"ms"
+    log "Request to stream-start: "+(intfStreamStartTime - intfStartTime)+"ms"
+ 
+    intfStartTime = null
+    intfStreamStartTime = null
+    return
+
 ############################################################
 export startAuthorizedSession = ->
     log "startAuthorizedSession"
@@ -52,6 +72,7 @@ export startResponseReceive = ->
 
 export receiveResponseFragment = (frag) ->
     log "receiveResponseFragment"
+    if !intfStreamStartTime then intfStreamStartTime = Date.now()
     newResponse += frag
     frame.addToResponseBuffer(frag)
     return
@@ -59,6 +80,7 @@ export receiveResponseFragment = (frag) ->
 export endResponseReceive = ->
     log "endResponseReceive"
     log "Full Response:\n"+newResponse
+    stopAndReportTimings()
     msgObj = { m:newResponse, s:FROMASSBOTO }
     
     # actually this should be impossible... but keep it :-)
@@ -67,6 +89,7 @@ export endResponseReceive = ->
     chatStorage.msgs.push(msgObj)
     frame.setChatHistory(chatStorage.msgs)
     frame.setDefaultState()
+    saveStorage()
     return
 
 export setNewSessionKey = (key) ->
@@ -91,5 +114,6 @@ export addUserMessage = (msg) ->
     frame.setChatHistory(chatStorage.msgs)
     frame.setProcessingResponseState()
     saveStorage()
+    setStartTime()
     ws.sendInterferenceRequest(msg)
     return

@@ -21,7 +21,8 @@
     box-sizing: border-box
     h1
         font-size 21pt
-    p 
+
+    p
         font-size 12pt
         line-height: 125%
 
@@ -29,7 +30,6 @@
     display none
     max-width 1024px
     padding 10px
-    padding-bottom 200px
     // justify-self: center
     margin auto
     height 100%
@@ -38,6 +38,20 @@
     scrollbar-width: thin
     scrollbar-color: #fff #000;
 
+
+#response-history
+    padding-bottom 166px
+
+#live-response
+    font-family: 
+// #response-history
+#response-preloader
+    color #fff
+    height 50px
+    width 50px
+    margin auto
+    margin-top 10px
+
 .user-message
     background-color alpha(#fff, 0.15)
     width fit-content
@@ -45,10 +59,22 @@
     margin 20px
     margin-left auto
 
+#live-response
+    font-size 12pt
+    line-height: 125%
+    text-align: left
+    
+.user-message
+.assboto-message
+    max-width 92%
+    box-sizing: border-box
+    text-align: left
+
 #no-response-section
     position absolute
     bottom calc(60% + 30px)
     width 100%
+
 
 #input-outer
     position absolute
@@ -76,6 +102,10 @@
 #user-input.initial
         opacity: 0.6
 
+#input-outer.frozen
+        opacity: 0.6
+        pointer-events: none
+
 #send-button
     position: absolute
     width 30px
@@ -90,7 +120,10 @@
     box-shadow: 0 0 5px #fff 
 
 
-@media desktopscreen
+@media desktopscreen    
+    #live-response
+        font-size: 14pt
+
     #chatframe
         h1
             font-size 26pt

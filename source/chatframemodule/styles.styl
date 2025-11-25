@@ -21,7 +21,6 @@
     box-sizing: border-box
     h1
         font-size 21pt
-
     p
         font-size 12pt
         line-height: 125%
@@ -63,7 +62,7 @@
     font-size 12pt
     line-height: 125%
     text-align: left
-    
+
 .user-message
 .assboto-message
     max-width 92%
@@ -73,6 +72,7 @@
 #no-response-section
     position absolute
     bottom calc(60% + 30px)
+    left 0
     width 100%
 
 
@@ -88,7 +88,7 @@
     border solid 2px #fff
     border-radius 25px
     box-sizing: border-box
-    width: 100%
+    width: 96%
     max-width 700px
     background-color alpha(#000, 0.85)
 
@@ -106,6 +106,8 @@
         opacity: 0.6
         pointer-events: none
 
+#send-button.click-button::after
+    background-color #000
 #send-button
     position: absolute
     width 30px
@@ -119,7 +121,7 @@
     padding-left 11px
     box-shadow: 0 0 5px #fff 
 
-
+    
 @media desktopscreen    
     #live-response
         font-size: 14pt

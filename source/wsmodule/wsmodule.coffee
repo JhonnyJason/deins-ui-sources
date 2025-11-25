@@ -27,6 +27,10 @@ relaxedHeartbeatMS = 120_000
 urlWebsocketBackend = "https://localhost:3333"
 
 ############################################################
+resetTimeoutMS = 10_000
+resetDisabled = false
+
+############################################################
 export initialize = (c) ->
     log "initialize"
     if c and c.heartbeatMS then relaxedHeartbeatMS = c.heartbeatMS
@@ -189,7 +193,10 @@ export sendInterferenceRequest = (msg) ->
 
 export sendHistoryReset = ->
     log "sendHistoryReset"
-    ## TODO check if we could use an argument here
+    return if resetDisabled
+
+    setTimeout((() -> resetDisabled = false), resetTimeoutMS)
+    resetDisabled = true
     socket.send("resetHistory")
     return
 

@@ -1,7 +1,10 @@
 //- header structure
-#header
+#header.no-history
     //- #header-logo: svg: use(href="#svg-deins-icon")
     #header-logo: img(src="/img/assboto.avif")
     h1 AssBoto 
         span#current-version v0.0.0
         
+    button#delete-history-button.click-button 
+        svg: use(href="#svg-cross-icon")
+        span Verlauf löschen

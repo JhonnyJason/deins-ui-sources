@@ -113,6 +113,19 @@ flushNext = ->
     return
  
 ############################################################
+setPreChattingState = ->
+    log "setPreChattingState"
+    chatframe.classList = "no-response"
+    header.classList = "no-history"
+    return
+
+setChattingState = ->
+    log "setChattingState"
+    chatframe.classList = "response"
+    header.classList = "history"
+    return
+
+############################################################
 export addToResponseBuffer = (frag) ->
     log "addToResponseBuffer"
     # return unless typeof responseBuffer == "string"
@@ -156,8 +169,9 @@ export setDefaultState = ->
     log "setDefaultState"
     stopStreaming()
 
-    if chatHistory? then chatframe.classList = "response"
-    else chatframe.classList = "no-response"
+    if chatHistory? then setChattingState()
+    else setPreChattingState()
+
     inputOuter.className = ""
 
     ## Remove liveResponse and responseWaitFrame    

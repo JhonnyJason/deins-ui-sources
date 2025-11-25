@@ -36,6 +36,8 @@ export initialize = ->
     if chatStorage.msgs? and (chatStorage.msgs.length > 0)
         frame.setChatHistory(chatStorage.msgs)
         frame.setDefaultState()
+
+    deleteHistoryButton.addEventListener("click", deleteHistoryClicked)
     return
 
 ############################################################
@@ -55,6 +57,16 @@ stopAndReportTimings = ->
  
     intfStartTime = null
     intfStreamStartTime = null
+    return
+
+############################################################
+deleteHistoryClicked = ->
+    log "deleteHistoryClicked"
+    frame.setChatHistory(null)
+    frame.setDefaultState()
+
+    saveStorage()
+    ws.sendHistoryReset()
     return
 
 ############################################################

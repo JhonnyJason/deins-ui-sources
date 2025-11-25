@@ -10,6 +10,8 @@ indexdomconnect.initialize = () ->
     global.inputOuter = document.getElementById("input-outer")
     global.userInput = document.getElementById("user-input")
     global.sendButton = document.getElementById("send-button")
+    global.header = document.getElementById("header")
+    global.deleteHistoryButton = document.getElementById("delete-history-button")
     return
     
 module.exports = indexdomconnect

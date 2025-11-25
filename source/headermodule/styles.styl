@@ -27,7 +27,40 @@
         width inherit
         height inherit
 
+#header.no-history
+    #delete-history-button
+        display none
+
+#delete-history-button.click-button::after
+    background-color black
+#delete-history-button
+    margin-left auto
+    // position absolute
+    // top 20px
+    // right 20px
+    // background-color #000
+    color #000
+    display flex
+    align-items: center
+    border-radius: 3px
+    border solid 2px #000
+    padding 3px
+    // box-shadow: 0 0 5px #fff
+    font-size: 16pt
+    span
+        display none
+        // text-decoration: underline
+        margin-left 5px
+    svg
+        height 33px
+        width 33px
+
+
 @media desktopscreen
+    #delete-history-button
+        span
+            display block
+            padding-right 5px
     #header-logo
         width: 60px
         height 60px
@@ -39,3 +72,4 @@
         h1
             font-size 25pt
             line-height: 60px
+

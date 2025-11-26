@@ -116,7 +116,7 @@ heartbeat = ->
 
     if socket.readyState == WebSocket.CLOSED
         destroySocket()
-        startStressReconnect()
+        startStressReconnect() unless stressTimeout?
 
     return
 
@@ -124,6 +124,7 @@ heartbeat = ->
 socketOpened = (evnt) ->
     log "socketOpened"
     clearTimeout(stressTimeout)
+    stressTimeout = null
     stressHeartbeatMS = 0
     setReady()
     sendSateRequest()

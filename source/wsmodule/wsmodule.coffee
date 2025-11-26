@@ -57,7 +57,8 @@ resetReadinessPromise = ->
         (rslv,rjct) -> 
             setReady = rslv
             setFailed = rjct
-    ))    
+    ))
+    ready.catch((() -> return))
     return
 
 setSpeedDelay = ->

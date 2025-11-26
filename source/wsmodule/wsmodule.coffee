@@ -77,7 +77,7 @@ createSocket = ->
         socket.addEventListener("error", receiveError)
         socket.addEventListener("close", socketClosed)
 
-    catch err then log err
+    catch err then console.error(err)
     return
 
 destroySocket = ->
@@ -166,9 +166,8 @@ receiveError = (evnt) ->
 
 socketClosed = (evnt) ->
     log "socketClosed"
-    log evnt.reason
     destroySocket()
-    startStressReconnect()
+    startStressReconnect() unless stressTimeout?
     return
 
 ############################################################

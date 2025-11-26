@@ -20,8 +20,8 @@ isStreaming = false
 bufferTextNode = null
 
 ############################################################
-noSession = true
 chatHistory = null
+isChatting = false
 
 ############################################################
 sToClass = []
@@ -46,12 +46,16 @@ sendClicked = (evnt) ->
     if content == "" or content == placeholderContent then return
 
     chat.addUserMessage(content)
+
+    ## This is the only entry into chatting State :-)
+    clearInputState()
+    isChatting = true
+    setResponseWaitingState()
     return
 
 ############################################################
 checkStateOnType = (evnt) ->
-    if noSession then chat.startAuthorizedSession()
-    noSession = false
+    chat.sessionKeyProbe()
 
     content = userInput.textContent.trim()
     if !(content == placeholderContent) or evnt.key == "Enter" then userInput.className = ""
@@ -89,13 +93,10 @@ stopStreaming = ->
     return
 
 startStreaming = ->
-    ## Remove responseWaitFrame  - add liveResponse frame
-    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
-    responseHistory.appendChild(liveResponse) unless liveResponse.isConnected
-
+    setResponseStreamingState()
     ## crate fresh bufferTextNode
     if bufferTextNode? then bufferTextNode.data += responseBuffer
-    else 
+    else
         bufferTextNode = document.createTextNode(responseBuffer)
         liveResponse.appendChild(bufferTextNode)
     responseBuffer = ""
@@ -113,17 +114,90 @@ flushNext = ->
     return
  
 ############################################################
-setPreChattingState = ->
-    log "setPreChattingState"
-    chatframe.classList = "no-response"
-    header.classList = "no-history"
+#region Local UI State Setters
+setChattingState = ->
+    if isStreaming then setResponseStreamingState()
+    else setResponseWaitingState()
     return
 
-setChattingState = ->
-    log "setChattingState"
+setNonChattingState = ->
+    log "setNonChattingState"
+    stopStreaming()
+    if !chatHistory? then return setNoHistoryState()
+    if chat.getErrorState() then return setErrorState()
+    if !chat.hasValidSessionKey() then return setDeprecatedHistoryState()
+    setActiveHistoryState()
+    return
+
+############################################################
+setNoHistoryState = ->
+    log "setNoHistoryState"
+    chatframe.classList = "no-response"
+    inputOuter.classList = "active"
+    header.classList = "no-history"
+
+    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
+    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
+    return
+
+setErrorState = ->
+    log "setErrorState"
+    inputOuter.classList = "error"
+    ## We can only have an error, when trying to get a response
+    #    So we have a history :-)
     chatframe.classList = "response"
     header.classList = "history"
+
+    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
+    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
     return
+
+setDeprecatedHistoryState = ->
+    log "setDeprecatedHistoryState"
+    ## here we could not do anything but look at our old chat or delete it
+    chatframe.classList = "response"
+    inputOuter.classList = "frozen"
+    header.classList = "history"
+
+    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
+    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
+    return
+    
+setActiveHistoryState = ->
+    log "setActiveHistoryState"
+    ## regular chattable state with responses
+    chatframe.classList = "response"
+    inputOuter.classList = "active"
+    header.classList = "history"
+
+    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
+    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
+    return
+
+############################################################
+setResponseWaitingState = ->
+    log "setResponseWaitingState"
+    chatframe.classList = "response"
+    inputOuter.classList = "frozen"
+    header.classList = "history-non-deletable"
+
+    ## Remove liveResponse  - add responseWaitFrame frame
+    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
+    responseHistory.appendChild(responseWaitFrame) unless responseWaitFrame.isConnected
+    return
+
+setResponseStreamingState = ->
+    log "setResponseStreamingState"
+    chatframe.classList = "response"
+    inputOuter.classList = "frozen"
+    header.classList = "history-non-deletable"
+
+    ## Remove responseWaitFrame  - add liveResponse frame
+    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
+    responseHistory.appendChild(liveResponse) unless liveResponse.isConnected
+    return
+
+#endregion
 
 ############################################################
 export addToResponseBuffer = (frag) ->
@@ -138,7 +212,10 @@ export addToResponseBuffer = (frag) ->
 export setChatHistory = (messages) ->
     log "setChatHistory"
     chatHistory = messages
-    stopStreaming()
+
+    ## Chat History is only being set when we are not chatting
+    isChatting = false
+    setNonChattingState() 
 
     html = ""
     if Array.isArray(chatHistory)
@@ -152,29 +229,8 @@ export setChatHistory = (messages) ->
     return
 
 ############################################################
-export setProcessingResponseState = ->
-    log "setProcessingResponseState"
-    stopStreaming()
-
-    chatframe.classList = "response"
-    clearInputState()
-    inputOuter.className = "frozen"
-
-    ## remove liveResponse and add responseWaitFrame
-    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
-    responseHistory.appendChild(responseWaitFrame) unless responseWaitFrame.isConnected
-    return
-
-export setDefaultState = ->
-    log "setDefaultState"
-    stopStreaming()
-
-    if chatHistory? then setChattingState()
-    else setPreChattingState()
-
-    inputOuter.className = ""
-
-    ## Remove liveResponse and responseWaitFrame    
-    if liveResponse.isConnected then responseHistory.removeChild(liveResponse)
-    if responseWaitFrame.isConnected then responseHistory.removeChild(responseWaitFrame)
+export resetState = ->
+    log "resetState"
+    if isChatting then setChattingState()
+    else setNonChattingState()
     return

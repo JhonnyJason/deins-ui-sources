@@ -10,7 +10,6 @@ import * as chat from "./chatsessionmodule.js"
 ############################################################
 socket = null
 pingTime = 0
-isOpen = false
 
 ############################################################
 stressHeartbeatMS = 0
@@ -27,8 +26,20 @@ relaxedHeartbeatMS = 120_000
 urlWebsocketBackend = "https://localhost:3333"
 
 ############################################################
-resetTimeoutMS = 10_000
+resetTimeoutMS = 12_000
 resetDisabled = false
+
+############################################################
+setFailed = null
+setReady = null
+ready = new Promise((
+    (rslv,rjct) -> 
+        setReady = rslv
+        setFailed = rjct
+))
+
+############################################################
+speedDelay = null
 
 ############################################################
 export initialize = (c) ->
@@ -38,6 +49,21 @@ export initialize = (c) ->
     createSocket() # try to connect already here
     return
 
+############################################################
+resetReadinessPromise = ->
+    log "resetReadinessPromise"
+    if setFailed? then setFailed()
+    ready = new Promise((
+        (rslv,rjct) -> 
+            setReady = rslv
+            setFailed = rjct
+    ))    
+    return
+
+setSpeedDelay = ->
+    log "setSpeedDelay"
+    speedDelay = new Promise(((rslv) -> setTimeout(rslv, resetTimeoutMS)))
+    return
 
 ############################################################
 createSocket = ->
@@ -53,13 +79,53 @@ createSocket = ->
     catch err then log err
     return
 
+destroySocket = ->
+    return unless socket?
+    resetReadinessPromise()
+    socket.removeEventListener("open", socketOpened)
+    socket.removeEventListener("message", receiveData)
+    socket.removeEventListener("error", receiveError)
+    socket.removeEventListener("close", socketClosed)
+    socket = null
+    pingTime = 0
+    return
+
+############################################################
+startStressReconnect = ->
+    log "startStressReconnect"
+    clearTimeout(stressTimeout)
+    stressHeartbeatMS = maxStressHeartbeatMS
+    stressTimeout = setTimeout(stressedHeartbeat, stressHeartbeatMS)
+    return
+
+stressedHeartbeat = ->
+    log "stressedHeartbeat"
+    heartbeat()
+    stressHeartbeatMS += stressLoss
+    if stressHeartbeatMS > minStressHeartbeatMS 
+        stressHeartbeatMS = minStressHeartbeatMS    
+    stressTimeout = setTimeout(stressedHeartbeat, stressHeartbeatMS)
+    return
+
+heartbeat = ->
+    log "heartbeat"
+    if !socket? then return createSocket()
+    
+    if socket.readyState == WebSocket.OPEN then sendPing()
+
+    if socket.readyState == WebSocket.CLOSED
+        destroySocket()
+        startStressReconnect()
+
+    return
+
 ############################################################
 socketOpened = (evnt) ->
     log "socketOpened"
-    sendPing()
     clearTimeout(stressTimeout)
     stressHeartbeatMS = 0
-    isOpen = true
+    setReady()
+    sendSateRequest()
     return
 
 receiveData = (evnt) ->
@@ -84,7 +150,9 @@ receiveData = (evnt) ->
             when "ai:" then chat.startResponseReceive()
             when "ai+" then chat.receiveResponseFragment(arg)
             when "ai/" then chat.endResponseReceive()
-            when "key" then chat.setNewSessionKey(arg)
+            when "key" then chat.setSessionKey(arg)
+            when "stt" then chat.noticeSessionState(arg)
+            when "err" then noticeError(arg)
             else console.error("Unsupported Command: "+cmd)
 
     catch err then console.error(err)
@@ -102,33 +170,13 @@ socketClosed = (evnt) ->
     startStressReconnect()
     return
 
-destroySocket = ->
-    return unless socket?
-    socket.removeEventListener("open", socketOpened)
-    socket.removeEventListener("message", receiveData)
-    socket.removeEventListener("error", receiveError)
-    socket.removeEventListener("close", socketClosed)
-    socket = null
-    pingTime = 0
-    isOpen = false
-    return
-
-startStressReconnect = ->
-    log "startStressReconnect"
-    clearTimeout(stressTimeout)
-    stressHeartbeatMS = maxStressHeartbeatMS
-    stressTimeout = setTimeout(stressedHeartbeat, stressHeartbeatMS)
-    return
-
-stressedHeartbeat = ->
-    log "stressedHeartbeat"
-    heartbeat()
-    stressHeartbeatMS += stressLoss
-    if stressHeartbeatMS > minStressHeartbeatMS 
-        stressHeartbeatMS = minStressHeartbeatMS    
-    stressTimeout = setTimeout(stressedHeartbeat, stressHeartbeatMS)
-    return
-
+############################################################
+noticeError = (err) ->
+    log "noticeError"
+    log err
+    switch err
+        when "TooFast" then setSpeedDelay()
+        else console.error("Unhandeled Error! (#{err})")
 
 ############################################################
 sendPing = ->
@@ -138,7 +186,7 @@ sendPing = ->
         ## maybe do something about the bad network health
     # send fresh ping
     pingTime = performance.now()
-    socket.send("ping")
+    send("ping")
     return
 
 receivePong = (msg) ->
@@ -151,6 +199,18 @@ receivePong = (msg) ->
     return
 
 ############################################################
+send = (msg) ->
+    sent = false
+    while !sent
+        try
+            await ready
+            await speedDelay
+            log "sending: "+msg
+            socket.send(msg)
+            sent = true
+        catch err then console.error(err)
+
+############################################################
 export startHeartbeat = ->
     log "startHeartbeat"
     # fire up the relaxed interval
@@ -160,35 +220,27 @@ export startHeartbeat = ->
     heartbeat() # starts stressMode if we are in"closed" state or have no socket
     return
 
-export heartbeat = ->
-    log "heartbeat"
-    if !socket? then return createSocket()
-    
-    if socket.readyState == WebSocket.OPEN then sendPing()
-
-    if socket.readyState == WebSocket.CLOSED
-        destroySocket()
-        startStressReconnect()
-
-    return
-
 ############################################################
 export sendAutorizeMe = (key) ->
     log "sendAutorizeMe"
-    return unless isOpen
 
     cmd = "authorizeMe"
-    if !key then return socket.send(cmd)
+    if !key then return send(cmd)
 
-    if typeof key == "string" and key.length > 0 
-        socket.send(cmd+" "+key)
-    else socket.send(cmd)
+    if typeof key == "string" and key.length > 0 then send(cmd+" "+key)
+    else send(cmd)
     return
 
 export sendInterferenceRequest = (msg) ->
     log "sendInterferenceRequest"
     msg = "interference "+msg
-    socket.send(msg)
+    send(msg)
+    return
+
+export sendInterferenceAck = ->
+    log "sendInterferenceAck"
+    msg = "interferenceAck"
+    send(msg)
     return
 
 export sendHistoryReset = ->
@@ -197,13 +249,18 @@ export sendHistoryReset = ->
 
     setTimeout((() -> resetDisabled = false), resetTimeoutMS)
     resetDisabled = true
-    socket.send("resetHistory")
+    send("resetHistory")
+    return
+
+export sendSateRequest = ->
+    log "sendSateRequest"
+    msg = "sendState"
+    send(msg)
     return
 
 ############################################################
 export sendMessage = (msg) ->
     log "sendMessage"
-    return unless isOpen
     log msg
-    socket.send(msg)
+    send(msg)
     return
